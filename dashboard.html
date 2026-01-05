@@ -1,0 +1,1315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>MedTrack Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --primary-color: #0b6b9a;
+            --primary-light: #4da6e0;
+            --primary-dark: #123e57;
+            --accent-color: #2ecc71;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --text-color: #123e57;
+            --light-bg: #f5f8fb;
+            --white: #ffffff;
+            --shadow: rgba(11,107,154,0.08);
+        }
+        
+        body {
+            background: linear-gradient(135deg, var(--light-bg) 0%, #eef8ff 100%);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            min-height: 100vh;
+            padding-left: 220px; /* space for left quick-actions sidebar */
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: float 25s infinite linear;
+        }
+
+        /* Make background shapes ignore pointer events so they don't block buttons */
+        .background-animation, .floating-shape { pointer-events: none; }
+        
+        .floating-shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            height: 60px;
+            top: 40%;
+            left: 85%;
+            animation-duration: 25s;
+            background: rgba(18, 62, 87, 0.04);
+        }
+        
+        .floating-shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 80%;
+            left: 10%;
+            animation-duration: 40s;
+            background: rgba(77, 166, 224, 0.08);
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(30px, -50px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-20px, 20px) rotate(240deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+            }
+        }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg, var(--white), #eaf6ff);
+            padding: 18px 30px 14px 30px;
+            box-shadow: 0 2px 8px rgba(11,107,154,0.06);
+            position: relative;
+            z-index: 10;
+            animation: slideDown 0.8s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .top-bar-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-dark);
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: pulseTitle 3s infinite;
+        }
+        
+        @keyframes pulseTitle {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .top-bar-actions {
+            display: flex;
+            gap: 18px;
+        }
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid rgba(11,107,154,0.08);
+            padding: 8px 12px;
+            border-radius: 8px;
+            color: var(--primary-dark);
+            font-weight:700;
+            cursor: pointer;
+        }
+        
+        .topbar-btn {
+            background: linear-gradient(90deg, var(--primary-light), #77c3f0);
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 22px;
+            font-size: 1.06rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.12);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+    /* Show labels next to topbar icons for clarity */
+    .topbar-btn .btn-label { display: inline-block; margin-left:8px; font-weight:700; }
+
+        /* Status pills for reminders/medicine */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 14px;
+            font-weight: 800;
+            font-size: 1.05rem;
+            color: #fff;
+            min-width: 110px;
+            text-align: center;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+        }
+        .status-pill--taken { background: #2ecc71; color: #fff; }
+        .status-pill--blinding {
+            background: #fff200 !important;
+            color: #2ecc71 !important;
+            font-size: 1.2rem;
+            font-weight: 900;
+            box-shadow: 0 0 12px #ffe600;
+            border: 2px solid #ffe600;
+        }
+        .status-pill--pending { background: #f39c12; color: #3b2b00; }
+        .status-pill--not { background: #e74c3c; color: #fff; }
+        /* Larger badge for expiry status rows */
+        .expiry-badge { padding: 10px 14px; border-radius: 12px; font-weight:800; font-size:1.02rem; }
+        
+        .topbar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .topbar-btn:hover::before {
+            left: 100%;
+        }
+        
+        .topbar-btn:hover {
+            background: linear-gradient(90deg, #3aa0d8, #5fbce8);
+            box-shadow: 0 10px 26px rgba(77,166,224,0.12);
+            transform: translateY(-3px) scale(1.04);
+        }
+        
+        /* Welcome Section */
+        .welcome-section {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 20px;
+            animation: fadeInUp 1s ease-out;
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .welcome-message {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+            display: inline-block;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .welcome-message::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            border-radius: 2px;
+            animation: expandWidth 1.5s ease-out;
+        }
+        
+        @keyframes expandWidth {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        
+        /* Summary Boxes */
+        .summary-container {
+            display: flex;
+            justify-content: space-between;
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+        
+        .summary-box {
+            background: linear-gradient(135deg, var(--white), #f2fbff);
+            border-radius: 16px;
+            padding: 22px;
+            flex: 1;
+            box-shadow: 0 6px 18px rgba(11,107,154,0.06);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeInScale 0.8s ease-out forwards;
+            opacity: 0;
+            transform: scale(0.9);
+        }
+        
+        .summary-box:nth-child(1) { animation-delay: 0.1s; }
+        .summary-box:nth-child(2) { animation-delay: 0.2s; }
+        .summary-box:nth-child(3) { animation-delay: 0.3s; }
+        
+        @keyframes fadeInScale {
+            to { opacity: 1; transform: scale(1); }
+        }
+        
+        .summary-box::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.5s ease;
+        }
+        
+        .summary-box:hover::before {
+            transform: scaleX(1);
+        }
+        
+        .summary-box:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(11,107,154,0.1);
+        }
+        
+        .summary-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            transition: all 0.4s ease;
+        }
+        
+        .summary-box:hover .summary-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+        
+        .medicines-icon {
+            color: var(--primary-light);
+        }
+        
+        .reminders-icon {
+            color: var(--warning-color);
+        }
+        
+        .expired-icon {
+            color: var(--danger-color);
+        }
+        
+        .summary-count {
+            font-size: 2.6rem;
+            font-weight: 800;
+            margin: 8px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .summary-box:hover .summary-count {
+            transform: scale(1.1);
+        }
+
+        /* Left quick actions sidebar */
+        .left-quick-actions {
+            position: fixed;
+            left: 8px;
+            top: 120px;
+            width: 190px;
+            background: linear-gradient(180deg,#ffffff,#f8fbff);
+            border-radius: 12px;
+            padding: 12px;
+            box-shadow: 0 8px 24px rgba(11,107,154,0.06);
+            z-index: 50;
+        }
+        .left-quick-actions .qa-header { font-weight:800;color:var(--primary-dark);margin-bottom:8px;text-align:center; }
+        .qa-btn { display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;text-decoration:none;color:var(--primary-dark);font-weight:700;margin:6px 0;border:1px solid transparent;}
+        .qa-btn:hover { background:#eef6ff;border-color:#d6eaf7; }
+        .qa-btn i { font-size:1.1rem; }
+        .qa-label { display:inline-block; }
+    /* (Removed elder-mode large styles) */
+        
+        .medicines-count {
+            color: var(--primary-light);
+        }
+        
+        .reminders-count {
+            color: var(--warning-color);
+        }
+        
+        .expired-count {
+            color: var(--danger-color);
+        }
+        
+        .summary-label {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        .view-btn {
+            background: linear-gradient(135deg, var(--primary-light), #77c3f0);
+            color: var(--white);
+            border: none;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 8px 20px rgba(77,166,224,0.12);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+            z-index: 1000;
+            pointer-events: auto;
+        }
+        
+        .view-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .view-btn:hover::before {
+            left: 100%;
+        }
+
+        .view-btn:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 12px 30px rgba(77,166,224,0.14);
+        }
+
+        /* DEBUG HELPERS - remove when done */
+        .view-btn.debug-highlight { outline: 3px solid rgba(255,0,0,0.7); }
+        .view-btn.debug-hover { box-shadow: 0 0 0 4px rgba(255,0,0,0.12) !important; }
+        
+        /* Main Sections */
+        .main-section {
+            display: none;
+            margin: 38px auto 0 auto;
+            max-width: 1100px;
+            width: 98%;
+            animation: fadeInMain 0.7s;
+            /* Ensure anchor targets are not hidden behind the fixed top-bar */
+            scroll-margin-top: 110px;
+        }
+        
+        .main-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeInMain {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        
+        .section-heading {
+            color: var(--primary-dark);
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin: 0 0 18px 0;
+            text-align: left;
+            letter-spacing: 1px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(77,166,224,0.2);
+            animation: slideInLeft 0.6s ease-out;
+        }
+        
+        @keyframes slideInLeft {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 16px rgba(11,107,154,0.04);
+            font-size: 1.02rem;
+            color: var(--text-color);
+            margin-bottom: 24px;
+            animation: fadeInTable 0.8s ease-out;
+        }
+        
+        @keyframes fadeInTable {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .data-table th, .data-table td {
+            border: 1px solid #eef6fb;
+            padding: 14px 16px;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .data-table th {
+            background: linear-gradient(135deg, #e8f6ff, #dff3ff);
+            color: var(--primary-dark);
+            font-weight: 700;
+            font-size: 1.02rem;
+        }
+        
+        .data-table tr {
+            transition: all 0.3s ease;
+        }
+        
+        .data-table tr:hover {
+            background-color: #f6fbff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(11,107,154,0.05);
+        }
+
+        /* Sticky table headers */
+        .data-table thead th {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, #e8f6ff, #dff3ff);
+            z-index: 3;
+        }
+        
+        .status-safe { 
+            background-color: rgba(46, 204, 113, 0.15); 
+            color: #27ae60; 
+            font-weight: 600;
+            animation: pulseSafe 2s infinite;
+        }
+        
+        @keyframes pulseSafe {
+            0% { background-color: rgba(46, 204, 113, 0.15); }
+            50% { background-color: rgba(46, 204, 113, 0.25); }
+            100% { background-color: rgba(46, 204, 113, 0.15); }
+        }
+        
+        .status-expiring { 
+            background-color: rgba(241, 196, 15, 0.15); 
+            color: var(--warning-color); 
+            font-weight: 600;
+            animation: pulseExpiring 2s infinite;
+        }
+        
+        @keyframes pulseExpiring {
+            0% { background-color: rgba(241, 196, 15, 0.15); }
+            50% { background-color: rgba(241, 196, 15, 0.25); }
+            100% { background-color: rgba(241, 196, 15, 0.15); }
+        }
+        
+        .status-expired { 
+            background: linear-gradient(90deg, rgba(231,76,60,0.12), rgba(231,76,60,0.06));
+            color: #7a1414; 
+            font-weight: 800;
+            animation: pulseExpired 1.8s infinite;
+            border-left: 6px solid #e74c3c;
+            box-shadow: 0 8px 20px rgba(231,76,60,0.08);
+        }
+
+        @keyframes pulseExpired {
+            0% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+            100% { transform: translateY(0); }
+        }
+
+        /* Larger badge for expiry status rows */
+        .expiry-badge { display:inline-flex; align-items:center; gap:8px; padding:10px 14px; border-radius:12px; font-weight:900; font-size:1.06rem; }
+        .expiry-badge.status-expired { background:#e74c3c;color:#fff;border:2px solid #b02a2a; }
+        .expiry-badge.status-expiring { background:#f39c12;color:#3b2b00;border:2px solid #b9770a; }
+        .expiry-badge.status-safe { background:#2ecc71;color:#0a3f20;border:2px solid #1f9a4a; }
+    /* Time badge for clear time display */
+    .time-badge { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:linear-gradient(90deg,#fff,#f2fbff); font-weight:800; font-size:1.02rem; color:#123e57; border:1px solid #e6f3fb; box-shadow:0 4px 10px rgba(11,107,154,0.04); }
+        
+        .btn { 
+            padding: 12px 16px; 
+            margin: 6px; 
+            border: none; 
+            cursor: pointer; 
+            border-radius: 8px; 
+            font-weight: 700; 
+            font-size: 1.02rem; 
+            transition: all 0.2s ease; 
+            display: inline-flex; 
+            align-items: center; 
+            gap: 10px;
+            min-height: 44px;
+            justify-content: center;
+        }
+        
+        .btn-pending { 
+            background-color: var(--warning-color); 
+            color: white;
+        }
+        
+        .btn-taken { 
+            background-color: var(--accent-color); 
+            color: white;
+        }
+        
+        .btn-not { 
+            background-color: var(--danger-color); 
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        /* Quick Actions - Fixed positioning */
+        .quick-actions-section {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 180px;
+            background: linear-gradient(135deg, var(--white), #eef6ff);
+            border-radius: 16px;
+            box-shadow: 0 10px 28px rgba(11,107,154,0.06);
+            padding: 14px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 5;
+            animation: slideInLeftQuick 0.8s ease-out;
+        }
+        
+        @keyframes slideInLeftQuick {
+            from { opacity: 0; transform: translateX(-20px) translateY(-50%); }
+            to { opacity: 1; transform: translateX(0) translateY(-50%); }
+        }
+        
+        .quick-actions-heading {
+            color: var(--primary-dark);
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            letter-spacing: 0.6px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .quick-actions-btns {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+        }
+        
+        .quick-action-btn {
+            background: var(--white);
+            color: var(--text-color);
+            border: 1px solid #eef6fb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 8px 20px rgba(11,107,154,0.04);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            text-decoration: none;
+            width: 100%;
+            justify-content: flex-start;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .quick-action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(77,166,224,0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .quick-action-btn:hover::before {
+            left: 100%;
+        }
+        
+        .quick-action-btn:hover {
+            background: linear-gradient(90deg, rgba(77,166,224,0.10), rgba(119,195,240,0.06));
+            color: var(--primary-dark);
+            box-shadow: 0 12px 30px rgba(77,166,224,0.12);
+            transform: translateY(-3px) scale(1.03);
+        }
+        
+        .quick-action-btn i {
+            font-size: 1.1rem;
+            width: 20px;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .quick-action-btn:hover i {
+            transform: scale(1.2);
+        }
+        
+        /* Alert Styles */
+        .alert {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            animation: slideInAlert 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-left: 4px solid;
+            max-width: 1100px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        @keyframes slideInAlert {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 125, 50, 0.1);
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(198, 40, 40, 0.1);
+            color: var(--error-color);
+            border-left-color: var(--error-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(21, 101, 192, 0.1);
+            color: var(--info-color);
+            border-left-color: var(--info-color);
+        }
+        
+        /* Responsive */
+        @media (max-width: 1100px) {
+            body {
+                padding-left: 0; /* Remove padding on smaller screens */
+            }
+            .main-section { 
+                max-width: 98vw; 
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+            .quick-actions-section { 
+                width: 160px;
+                left: 10px;
+            }
+            .summary-container {
+                flex-direction: column;
+                max-width: 500px;
+                margin-left: auto;
+                margin-right: auto;
+            }
+            .welcome-section {
+                margin-left: 20px;
+                margin-right: 20px;
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .quick-actions-section {
+                position: relative;
+                width: 100%;
+                max-width: 600px;
+                margin: 20px auto;
+                left: 0;
+                top: 0;
+                transform: none;
+                border-radius: 14px;
+            }
+            .quick-actions-btns {
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .quick-action-btn {
+                width: auto;
+                min-width: 150px;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .section-heading { font-size: 1.1rem; }
+            .data-table th, .data-table td { padding: 8px; font-size: 0.97rem; }
+            .topbar-btn { font-size: 1rem; padding: 8px 12px; }
+            .quick-action-btn { 
+                font-size: 0.9rem;
+                padding: 10px 8px;
+            }
+            .welcome-message { font-size: 2rem; }
+            .summary-count { font-size: 2.5rem; }
+            .summary-label { font-size: 1.2rem; }
+        }
+        
+        @media (max-width: 500px) {
+            .main-section { padding: 6px 1vw; }
+            .data-table th, .data-table td { padding: 5px; font-size: 0.93rem; }
+            .quick-actions-section { padding: 14px 0 8px 0; }
+            .welcome-message { font-size: 1.8rem; }
+            .summary-count { font-size: 2rem; }
+            .summary-label { font-size: 1.1rem; }
+            .quick-action-btn {
+                min-width: 130px;
+            }
+        }
+    </style>
+</head>
+<body>
+    
+    
+
+    <!-- Left Quick Actions Sidebar -->
+    <nav class="left-quick-actions" aria-label="Quick actions">
+        <div class="qa-header">Quick Actions</div>
+        <a href="{{ url_for('add_medicine') }}" class="qa-btn" title="Add Medicine"><i class="fas fa-plus"></i><span class="qa-label">Add Medicine</span></a>
+        <a href="{{ url_for('reminder_route') }}" class="qa-btn" title="Set Reminder"><i class="fas fa-clock"></i><span class="qa-label">Set Reminder</span></a>
+        <a href="{{ url_for('expiry') }}" class="qa-btn" title="Track Expiry"><i class="fas fa-calendar-alt"></i><span class="qa-label">Track Expiry</span></a>
+        <a href="{{ url_for('alternative') }}" class="qa-btn" title="Find Alternatives"><i class="fas fa-pills"></i><span class="qa-label">Alternatives</span></a>
+    </nav>
+
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-title">
+            <i class="fas fa-notes-medical"></i> MedTrack
+        </div>
+        <div class="top-bar-actions">
+            
+            <a href="{{ url_for('home') }}" class="topbar-btn" title="Go to home"><i class="fas fa-home"></i> <span class="btn-label">Home</span></a>
+            <!-- Large text mode removed -->
+            <a href="{{ url_for('logout') }}" class="topbar-btn" title="Logout"><i class="fas fa-door-open"></i> <span class="btn-label">Logout</span></a>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    <div style="max-width:1100px;margin:0 auto;">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    </div>
+
+    <!-- Missed reminders alert -->
+    {% if today_stats and today_stats.missed > 0 %}
+    <div style="max-width:1100px;margin:12px auto;">
+        <div class="alert alert-danger">⚠️ You have <strong>{{ today_stats.missed }}</strong> missed reminder(s) today. Please review your schedule.</div>
+    </div>
+    {% endif %}
+
+    <!-- Main Sections -->
+    <!-- Today's Schedule -->
+    <div class="welcome-section">
+    <div class="welcome-message">Welcome, {{ user.username }}!</div>
+    </div>
+    <div class="summary-container">
+        <div class="summary-box">
+            <div class="summary-icon medicines-icon"><i class="fas fa-pills"></i></div>
+            <div class="summary-count medicines-count">{{ medicines|length }}</div>
+            <div class="summary-label">Total Medicines</div>
+            <a class="view-btn" href="#section-meds" data-section="meds" onclick="showSection('meds')"><i class="fas fa-eye"></i> View My Medicine</a>
+        </div>
+        <div class="summary-box">
+            <div class="summary-icon reminders-icon"><i class="fas fa-bell"></i></div>
+            <div class="summary-count reminders-count">{{ reminders|length }}</div>
+            <div class="summary-label">Reminders</div>
+            <a class="view-btn" href="#section-reminders" data-section="reminders" onclick="showSection('reminders')"><i class="fas fa-eye"></i> View Reminders</a>
+        </div>
+        <div class="summary-box">
+            <div class="summary-icon expired-icon"><i class="fas fa-calendar-times"></i></div>
+            <div class="summary-count expired-count">{{ expired_meds|length }}</div>
+            <div class="summary-label">Upcoming Expiries</div>
+            <a class="view-btn" href="#section-expiry" data-section="expiry" onclick="showSection('expiry')"><i class="fas fa-eye"></i> View Expiry Info</a>
+        </div>
+        <!-- Today's summary box -->
+        <div class="summary-box">
+            <div class="summary-icon reminders-icon"><i class="fas fa-list-check"></i></div>
+            <div class="summary-count" style="color:var(--primary-dark);">{{ today_stats.total if today_stats else 0 }}</div>
+            <div class="summary-label">Today's Reminders</div>
+            <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+                <div style="background:#2ecc71;color:#fff;padding:8px 10px;border-radius:8px;font-weight:800;">Taken: {{ today_stats.taken if today_stats else 0 }}</div>
+                <div style="background:#e74c3c;color:#fff;padding:8px 10px;border-radius:8px;font-weight:800;">Missed: {{ today_stats.missed if today_stats else 0 }}</div>
+                <div style="background:#f39c12;color:#fff;padding:8px 10px;border-radius:8px;font-weight:800;">Pending: {{ today_stats.pending if today_stats else 0 }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="main-section active" id="section-today" style="max-width:1100px;margin:18px auto;">
+        <div class="section-heading"><i class="fas fa-calendar-day"></i> Today's Schedule</div>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;">
+            <div style="flex:1;min-width:280px;">
+                <h3 style="margin:6px 0 10px;color:var(--primary-dark);">Medicine Times</h3>
+                {% if todays_medicines %}
+                <ul style="list-style:none;padding:0;margin:0;">
+                    {% for item in todays_medicines|sort(attribute='time') %}
+                    {% if item.taken %}
+                    <li style="background:linear-gradient(90deg, #e8fbf0, #f2fff7);border:2px solid rgba(46,204,113,0.12);border-radius:10px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:900;color:#0b6b9a;font-size:1.12rem;">{{ item.medicine.name }} <span class="status-pill status-pill--taken" style="margin-left:8px;">Taken ✓</span></div>
+                            <div style="font-size:1rem;color:#174c6e;">{{ item.dosage }} — {{ item.before_after }}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            <div style="font-weight:900;color:#27ae60;font-size:1.12rem;"><span class="time-badge" aria-label="Time">⏰ {{ item.time }}</span></div>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li style="background:#ffffff;border:1px solid #eef6fb;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:700;color:var(--primary-dark);">{{ item.medicine.name }}</div>
+                            <div style="font-size:0.95rem;color:#6b7f8f;">{{ item.dosage }} — {{ item.before_after }}</div>
+                        </div>
+                        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+                            <div style="font-weight:800;color:var(--primary-light);font-size:1.05rem;"><span class="time-badge" aria-label="Time">⏰ {{ item.time }}</span></div>
+                        </div>
+                    </li>
+                    {% endif %}
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:12px;background:#eaf6ff;border:1px solid #b3d8f7;border-radius:8px;color:#3a5a6b;font-weight:600;">No medicines scheduled for today.</div>
+                {% endif %}
+            </div>
+
+            <div style="flex:1;min-width:280px;">
+                <h3 style="margin:6px 0 10px;color:var(--primary-dark);">Reminders</h3>
+                {% if todays_reminders %}
+                <ul style="list-style:none;padding:0;margin:0;">
+                    {% for r in todays_reminders %}
+                    <li style="background:#ffffff;border:1px solid #eef6fb;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:700;color:var(--primary-dark);">{{ r.reminder.medicine.name }}</div>
+                            {% set r_time = (r.time.split('|')[0] if '|' in r.time else r.time) %}
+                            <div style="font-size:0.95rem;color:#6b7f8f;">Time: <span class="time-badge" aria-label="Time">⏰ {{ r_time }}</span></div>
+                        </div>
+                        <div>
+                            {% set status = (r.statuses.get(r.time) if r.statuses else None) or 'Pending' %}
+                            {% if status|lower == 'taken' %}
+                                <span class="status-pill status-pill--taken" role="status" aria-label="Taken">🟢 Taken</span>
+                            {% elif status|lower in ['not taken','not-taken','not'] %}
+                                <span class="status-pill status-pill--not" role="status" aria-label="Not taken">🔴 Not Taken</span>
+                            {% else %}
+                                <span class="status-pill status-pill--pending" role="status" aria-label="Pending">🟠 {{ status }}</span>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:12px;background:#eaf6ff;border:1px solid #b3d8f7;border-radius:8px;color:#3a5a6b;font-weight:600;">No reminders for today.</div>
+                {% endif %}
+            </div>
+
+            <div style="flex:0.9;min-width:280px;">
+                <h3 style="margin:6px 0 10px;color:var(--primary-dark);">Expiries</h3>
+                {% set filtered = expired_meds_info | selectattr('status', 'in', ['Expiring Soon','Expired']) | list %}
+                {% if filtered %}
+                <ul style="list-style:none;padding:0;margin:0;">
+                    {% for e in filtered %}
+                    <li style="background:#ffffff;border:1px solid #eef6fb;border-radius:8px;padding:10px 12px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:700;color:var(--primary-dark);">{{ e.expiry.medicine.name }} <small style="color:#6b7f8f;">(Batch {{ e.expiry.batch_number }})</small></div>
+                            <div style="font-size:0.95rem;color:#6b7f8f;">Expiry: {{ e.expiry.expiry_date }}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            {% if e.days_left is not none %}
+                                {% if e.days_left < 0 %}
+                                    <div><span class="expiry-badge status-expired" aria-label="Expired">⚠️ EXPIRED ({{ -e.days_left }}d ago)</span></div>
+                                {% else %}
+                                    <div>
+                                        {% if e.days_left <= 7 %}
+                                            <span class="expiry-badge status-expiring" aria-label="Expiring soon">⏳ Expiring in {{ e.days_left }}d</span>
+                                        {% else %}
+                                            <span class="expiry-badge status-safe" aria-label="Safe">✅ Safe ({{ e.days_left }}d left)</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div style="font-weight:700;color:#6b7f8f;">Unknown</div>
+                            {% endif %}
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div style="padding:12px;background:#eaf6ff;border:1px solid #b3d8f7;border-radius:8px;color:#3a5a6b;font-weight:600;">No expiring or expired medicines.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+
+    <div id="section-reminders" class="main-section">
+        <div class="section-heading"><i class="fas fa-bell"></i> All Reminders</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Time</th>
+                    <th>Frequency</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if reminders|length == 0 %}
+                <tr>
+                    <td colspan="4" style="color:#6b7f8f;padding:10px;text-align:center;">No reminders set yet.</td>
+                </tr>
+            {% else %}
+                {% for rem in reminders %}
+                <tr>
+                    <td>{{ rem.medicine.name }}</td>
+                    <td>
+                        {% set display_time = rem.reminder_time.split('|')[0] %}
+                        <span class="time-badge" aria-label="Time">⏰ {{ display_time }}</span>
+                        {% set time_key = rem.reminder_time.split('|')[0] %}
+                        {% set today_key = time_key ~ '|' ~ datetime.now().date().isoformat() %}
+                        {% set status = rem.status_dict.get(today_key) or rem.status_dict.get(time_key) or 'Pending' %}
+                        <div style="margin-top:6px;">
+                            {% if status|lower == 'taken' %}
+                                <span class="status-pill status-pill--taken" role="status" aria-label="Taken">🟢 Taken</span>
+                            {% elif status|lower in ['not taken','not-taken','not'] %}
+                                <span class="status-pill status-pill--not" role="status" aria-label="Not taken">🔴 Not Taken</span>
+                            {% else %}
+                                <span class="status-pill status-pill--pending" role="status" aria-label="Pending">🟠 {{ status }}</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td>
+                        {% set freq = rem.frequency|lower|trim %}
+                        {% if freq == 'daily' or freq == 'once a day' %}
+                            Daily
+                        {% elif freq == 'weekly' %}
+                            Weekly
+                        {% elif freq == 'monthly' %}
+                            Monthly
+                        {% else %}
+                            <span style="color:#e67e22;font-weight:600;">{{ rem.frequency }}</span>
+                        {% endif %}
+                    </td>
+                    <td style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+                        <form method="POST" action="{{ url_for('update_status', reminder_id=rem.id, time=rem.reminder_time.split('|')[0], status='Taken') }}" style="display:inline;">
+                            <button type="submit" class="btn" style="background:#2ecc71;color:#fff;border:none;border-radius:8px;" title="Mark as taken" aria-label="Mark as taken">🟢 Taken</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('update_status', reminder_id=rem.id, time=rem.reminder_time.split('|')[0], status='Not Taken') }}" style="display:inline;">
+                            <button type="submit" class="btn" style="background:#e74c3c;color:#fff;border:none;border-radius:8px;" title="Mark as not taken" aria-label="Mark as not taken">🔴 Not Taken</button>
+                        </form>
+                        <form method="POST" action="{{ url_for('delete_reminder', reminder_id=rem.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-not" style="background:#fff;color:#e74c3c;border:2px solid #e74c3c;font-weight:900;border-radius:8px;" title="Delete this reminder" aria-label="Delete reminder">
+                                🗑️ Delete
+                            </button>
+                        </form>
+                        <a href="{{ url_for('reminder_route') }}?edit_id={{ rem.id }}" class="btn btn-pending" style="background:#f9e79f;color:#b7950b;font-weight:900;border-radius:8px;" title="Edit this reminder" aria-label="Edit reminder">
+                            ✏️ Edit
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="section-expiry" class="main-section">
+        <div class="section-heading"><i class="fas fa-calendar-times"></i> Expiry Medicines</div>
+        <div style="max-width:1100px;margin:8px auto 12px auto;color:#3a5a6b;font-weight:700;">
+            <span style="margin-right:14px;">⚠️ <strong style="color:#b22222;">EXPIRED</strong></span>
+            <span style="margin-right:14px;">⏳ <strong style="color:#b9770a;">Expiring Soon</strong></span>
+            <span style="margin-right:14px;">✅ <strong style="color:#1f9a4a;">Safe</strong></span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Medicine</th>
+                    <th>Batch</th>
+                    <th>MFG Date</th>
+                    <th>Expiry Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if expired_meds|length == 0 %}
+            <tr>
+                <td colspan="5" style="text-align:center;color:#3a5a6b;background:#eaf6ff;font-weight:600;padding:18px;border:1px solid #b3d8f7;">No expiries added yet.</td>
+            </tr>
+            {% else %}
+                {% for exp in expired_meds %}
+                {% set days_left = (datetime.strptime(exp.expiry_date,"%Y-%m-%d") - datetime.now()).days %}
+                {% if days_left < 0 %}
+                    {% set exp_status = "Expired" %}
+                    {% set cls = "status-expired" %}
+                {% elif days_left <=7 %}
+                    {% set exp_status = "Expiring Soon" %}
+                    {% set cls = "status-expiring" %}
+                {% else %}
+                    {% set exp_status = "Safe" %}
+                    {% set cls = "status-safe" %}
+                {% endif %}
+                <tr class="{{ cls }}">
+                    <td>{{ exp.medicine.name }}</td>
+                    <td>{{ exp.batch_number }}</td>
+                    <td>{{ exp.mfg_date }}</td>
+                    <td>{{ exp.expiry_date }}</td>
+                    <td>
+                        {% if exp_status == 'Expired' %}
+                            <span class="expiry-badge status-expired" aria-label="Expired">⚠️ EXPIRED ({{ -days_left }}d ago)</span>
+                        {% elif exp_status == 'Expiring Soon' %}
+                            <span class="expiry-badge status-expiring" aria-label="Expiring soon">⏳ Expiring in {{ days_left }}d</span>
+                        {% else %}
+                            <span class="expiry-badge status-safe" aria-label="Safe">✅ Safe ({{ days_left }}d left)</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="section-meds" class="main-section">
+        <div class="section-heading"><i class="fas fa-pills"></i> Your Medicines</div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Dosage</th>
+                    <th>Unit</th>
+                    <th>Timing</th>
+                    <th>Before/After</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% if medicines|length == 0 %}
+            <tr>
+                <td colspan="9" style="text-align:center;color:#3a5a6b;background:#eaf6ff;font-weight:600;padding:18px;border:1px solid #b3d8f7;">No medicines added yet.</td>
+            </tr>
+            {% else %}
+                {% for med in medicines %}
+                <tr>
+                    <td>{{ med.name }}</td>
+                    <td>{{ med.med_type }}{% if med.med_type=='Drops' %}({{ med.drops_type }}){% endif %}</td>
+                    <td>{{ med.dosage }}</td>
+                    <td>{{ med.unit }}</td>
+                    <td>{{ med.timing }}</td>
+                    <td>{{ med.before_after }}</td>
+                    <td>{{ med.start_date }}</td>
+                    <td>{{ med.end_date }}</td>
+                    <td>
+                        <form method="POST" action="{{ url_for('delete_medicine', medicine_id=med.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-not" style="background:#fff;color:#e74c3c;border:1px solid #e74c3c;font-weight:900;">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Quick Actions moved to top bar -->
+        <footer style="text-align: center; padding: 20px; background-color: #f1f1f1;">
+            <p>&copy; 2025 MedTrack. All rights reserved.</p>
+        </footer>
+
+    <script>
+        // Function to show specific section from summary boxes
+        function showSection(sectionName) {
+            const map = {
+                'meds': document.getElementById('section-meds'),
+                'reminders': document.getElementById('section-reminders'),
+                'expiry': document.getElementById('section-expiry')
+            };
+
+            // Collect all main sections (defensive - in case new sections added)
+            const all = Array.from(document.querySelectorAll('.main-section'));
+
+            // Hide all sections forcefully (inline styles + aria)
+            all.forEach(s => {
+                try{
+                    s.classList.remove('active');
+                    s.style.display = 'none';
+                    s.setAttribute('aria-hidden', 'true');
+                }catch(e){ /* ignore */ }
+            });
+
+            const target = map[sectionName];
+            if(!target){ console.warn('showSection: no target for', sectionName); return; }
+
+            // Force show target: add active class, inline style, aria, then scroll and focus
+            try{
+                target.classList.add('active');
+                target.style.display = 'block';
+                target.setAttribute('aria-hidden', 'false');
+
+                // Scroll to the target and adjust for fixed header
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+                // For accessibility ensure target is focusable then focus it
+                if(!target.hasAttribute('tabindex')) target.setAttribute('tabindex','-1');
+                target.focus({ preventScroll: true });
+            }catch(e){ console.error('showSection error', e); }
+        }
+        
+        // Add hover effects to table rows
+        document.addEventListener('DOMContentLoaded', function() {
+            const tableRows = document.querySelectorAll('.data-table tr');
+            tableRows.forEach(row => {
+                row.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 8px rgba(11,107,154,0.05)';
+                });
+                
+                row.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+        });
+
+        // DEBUG: log clicks on view buttons and flash a red outline briefly
+        (function(){
+            document.addEventListener('click', function(e){
+                var btn = e.target.closest('.view-btn');
+                if(btn){
+                    console.log('DEBUG: view-btn clicked:', btn.textContent.trim());
+                    btn.classList.add('debug-highlight');
+                    setTimeout(()=>btn.classList.remove('debug-highlight'), 1200);
+                }
+            });
+            // Add hover class on mouseover for testing
+            document.querySelectorAll('.view-btn').forEach(b=>{
+                b.addEventListener('mouseover', ()=>b.classList.add('debug-hover'));
+                b.addEventListener('mouseout', ()=>b.classList.remove('debug-hover'));
+            });
+            // Ensure anchors for meds/expiry reliably call showSection
+            var medsAnchor = document.querySelector('a.view-btn[href="#section-meds"]');
+            var expiryAnchor = document.querySelector('a.view-btn[href="#section-expiry"]');
+            function bindAnchor(a, name){
+                if(!a) return;
+                a.setAttribute('role','button');
+                a.setAttribute('tabindex','0');
+                a.addEventListener('click', function(ev){
+                    console.log('DEBUG: anchor clicked for', name);
+                    try{ showSection(name); }catch(e){ console.error(e); }
+                    // do not prevent default - allow href fallback if showSection fails
+                });
+                a.addEventListener('keydown', function(ev){
+                    if(ev.key === 'Enter' || ev.key === ' '){ ev.preventDefault(); a.click(); }
+                });
+            }
+            bindAnchor(medsAnchor, 'meds');
+            bindAnchor(expiryAnchor, 'expiry');
+            // If the page loads with a hash, open that section
+            function openFromHash() {
+                try {
+                    var h = location.hash && location.hash.replace('#','');
+                    if(h === 'section-meds' || h === 'section-reminders' || h === 'section-expiry'){
+                        // map hash id to our short names
+                        var map = { 'section-meds':'meds', 'section-reminders':'reminders', 'section-expiry':'expiry' };
+                        showSection(map[h]);
+                    }
+                } catch(e){ console.error('DEBUG: openFromHash failed', e); }
+            }
+            window.addEventListener('hashchange', openFromHash);
+            document.addEventListener('DOMContentLoaded', openFromHash);
+        })();
+        // small visible click ripple for debugging
+        (function(){
+            function ripple(x,y){
+                var d = document.createElement('div');
+                d.style.position='fixed'; d.style.width='18px'; d.style.height='18px'; d.style.borderRadius='50%';
+                d.style.background='rgba(255,0,0,0.7)'; d.style.left=(x-9)+'px'; d.style.top=(y-9)+'px';
+                d.style.zIndex=99999; d.style.pointerEvents='none'; d.style.transition='opacity 600ms ease-out, transform 600ms ease-out';
+                document.body.appendChild(d);
+                requestAnimationFrame(()=>{ d.style.opacity='0'; d.style.transform='scale(3)'; });
+                setTimeout(()=>d.remove(),650);
+            }
+            document.addEventListener('click', function(e){ if(e.target.closest('.view-btn')) ripple(e.clientX,e.clientY); }, true);
+        })();
+        // Delegated handler: ensure any .view-btn[data-section] clicks reliably show the section and update the URL
+        (function(){
+            document.addEventListener('click', function(ev){
+                var a = ev.target.closest('.view-btn[data-section]');
+                if(!a) return;
+                try{
+                    ev.preventDefault();
+                    var name = a.getAttribute('data-section');
+                    console.log('DEBUG: delegated view-btn click for', name);
+                    // if reminders requested but reminders section not present, show toast
+                    if(name === 'reminders' && !document.getElementById('section-reminders')){
+                        showToast('No reminders set yet. Please create a reminder first.');
+                    } else {
+                        showSection(name);
+                    }
+                    // update url hash without causing page reload
+                    var mapBack = { 'meds':'section-meds', 'reminders':'section-reminders', 'expiry':'section-expiry' };
+                    if(mapBack[name]){
+                        history.pushState(null,'', '#'+mapBack[name]);
+                    }
+                    // focus for a11y
+                    a.focus();
+                }catch(e){ console.error('DEBUG: delegated handler error', e); }
+            }, true);
+        })();
+
+        // Lightweight toast helper
+        function showToast(msg, timeout){
+            timeout = timeout || 3000;
+            var t = document.createElement('div');
+            t.textContent = msg;
+            t.style.position='fixed'; t.style.right='20px'; t.style.bottom='20px'; t.style.background='#123e57'; t.style.color='#fff';
+            t.style.padding='12px 16px'; t.style.borderRadius='8px'; t.style.boxShadow='0 8px 24px rgba(0,0,0,0.12)'; t.style.zIndex=99999;
+            document.body.appendChild(t);
+            setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(10px)'; }, timeout-400);
+            setTimeout(()=>t.remove(), timeout+100);
+        }
+    </script>
+</body>
+</html>
