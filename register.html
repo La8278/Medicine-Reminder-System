@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join MedTrack</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --primary-color: #0b6b9a;
+            --primary-light: #4da6e0;
+            --primary-dark: #123e57;
+            --accent-color: #2ecc71;
+            --text-color: #123e57;
+            --light-bg: #f5f8fb;
+            --white: #ffffff;
+            --shadow: rgba(11,107,154,0.08);
+            --success-color: #2e7d32;
+            --error-color: #c62828;
+            --info-color: #1565c0;
+        }
+        
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--light-bg) 0%, #eef8ff 100%);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(77, 166, 224, 0.1);
+            animation: float 20s infinite linear;
+        }
+        
+        .floating-shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 5%;
+            animation-duration: 25s;
+        }
+        
+        .floating-shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            left: 80%;
+            animation-duration: 30s;
+            background: rgba(46, 204, 113, 0.08);
+        }
+        
+        .floating-shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 40%;
+            left: 85%;
+            animation-duration: 20s;
+            background: rgba(18, 62, 87, 0.05);
+        }
+        
+        .floating-shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 80%;
+            left: 10%;
+            animation-duration: 35s;
+            background: rgba(77, 166, 224, 0.1);
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(30px, -50px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-20px, 20px) rotate(240deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+            }
+        }
+        
+        .top-left-heading {
+            position: absolute;
+            top: 32px;
+            left: 40px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary-dark);
+            letter-spacing: 2px;
+            text-shadow: none;
+            z-index: 10;
+            animation: fadeInDown 0.8s, subtleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes subtleGlow {
+            0% {
+                text-shadow: 0 0 12px rgba(77,166,224,0.28), 0 2px 18px rgba(34,120,170,0.12);
+                transform: scale(1);
+            }
+            50% {
+                text-shadow: 0 0 24px rgba(77,166,224,0.32), 0 2px 24px rgba(119,195,240,0.20);
+                transform: scale(1.02);
+            }
+            100% {
+                text-shadow: 0 0 12px rgba(77,166,224,0.28), 0 2px 18px rgba(34,120,170,0.12);
+                transform: scale(1);
+            }
+        }
+        
+        /* Top bar styles */
+        .top-bar {
+            position: absolute;
+            top: 28px;
+            right: 40px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+        
+        .top-bar-btn {
+            background: linear-gradient(90deg, var(--primary-light), #77c3f0);
+            color: var(--white);
+            border: 1.5px solid rgba(77,166,224,0.9);
+            border-radius: 22px;
+            padding: 7px 18px 7px 18px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(77,166,224,0.12);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .top-bar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .top-bar-btn:hover::before {
+            left: 100%;
+        }
+        
+        .top-bar-btn:hover, .top-bar-btn:focus {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 22px rgba(77,166,224,0.15);
+        }
+        
+        .center-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-card {
+            background: linear-gradient(135deg, var(--white) 0%, #f2fbff 100%);
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            padding: 35px 30px 30px 30px;
+            width: 100%;
+            max-width: 450px;
+            color: var(--text-color);
+            animation: fadeInUp 1.1s, cardGlow 4s ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(77,166,224,0.1);
+        }
+        
+        @keyframes cardGlow {
+            0% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            }
+            50% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.15);
+            }
+            100% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            }
+        }
+        
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            animation: borderFlow 3s linear infinite;
+        }
+        
+        @keyframes borderFlow {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        
+        .register-card h2 {
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .register-card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #355a6b;
+            transition: color 0.3s;
+        }
+        
+        .input-container {
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .input-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-light);
+            font-size: 1.1rem;
+            opacity: 0.9;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 15px 14px 44px;
+            border: 1.5px solid #d6eaf7;
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--white);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(119,195,240,0.15);
+            outline: none;
+            background: var(--white);
+            transform: translateY(-2px);
+        }
+        
+        input:focus + i {
+            color: var(--primary-dark);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-light);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        
+        .toggle-password:hover {
+            color: var(--primary-dark);
+            background: transparent;
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, var(--primary-light), #77c3f0);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            animation: pulseBtn 2s infinite;
+        }
+        
+        @keyframes pulseBtn {
+            0% { box-shadow: 0 6px 18px rgba(77,166,224,0.15); }
+            50% { box-shadow: 0 6px 18px rgba(77,166,224,0.25); }
+            100% { box-shadow: 0 6px 18px rgba(77,166,224,0.15); }
+        }
+        
+        button[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        button[type="submit"]:hover::before {
+            left: 100%;
+        }
+        
+        button[type="submit"]:hover {
+            box-shadow: 0 10px 26px rgba(77,166,224,0.2);
+            transform: translateY(-3px);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: #b0c4de;
+            font-size: 0.98rem;
+            animation: fadeIn 1s 0.8s both;
+        }
+        
+        .login-link a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .login-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-light);
+            transition: width 0.3s;
+        }
+        
+        .login-link a:hover {
+            color: var(--primary-dark);
+        }
+        
+        .login-link a:hover::after {
+            width: 100%;
+        }
+        
+        .alert {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            animation: slideInAlert 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-left: 4px solid;
+        }
+        
+        @keyframes slideInAlert {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 125, 50, 0.1);
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(198, 40, 40, 0.1);
+            color: var(--error-color);
+            border-left-color: var(--error-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(21, 101, 192, 0.1);
+            color: var(--info-color);
+            border-left-color: var(--info-color);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @media (max-width: 900px) {
+            .top-left-heading, .top-bar {
+                position: static;
+                margin: 20px 0 0 0;
+                left: unset;
+                right: unset;
+                top: unset;
+                display: flex;
+                justify-content: center;
+            }
+            .top-bar {
+                margin-bottom: 10px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .top-left-heading {
+                font-size: 1.8rem;
+                margin-top: 32px;
+            }
+            .center-container {
+                padding: 20px 0;
+            }
+            .register-card {
+                padding: 25px 20px 20px 20px;
+                max-width: 95vw;
+            }
+            .top-bar-btn {
+                font-size: 0.93rem;
+                padding: 7px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation">
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+    </div>
+    
+    <div class="top-left-heading">MedTrack</div>
+    <div class="top-bar">
+        <a href="{{ url_for('home') }}" class="top-bar-btn"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('logout') }}" class="top-bar-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    <div class="center-container">
+        <div class="register-card">
+            <h2>Join MedTrack</h2>
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                            {{ msg }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST" id="registerForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-container">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email (Gmail only)</label>
+                    <div class="input-container">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <div class="input-container">
+                        <i class="fas fa-phone"></i>
+                        <input type="text" id="phone" name="phone" required maxlength="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-container">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </form>
+            <p class="login-link">
+                Already have an account? <a href="{{ url_for('login') }}">Login here.</a>
+            </p>
+        </div>
+    </div>
+    <script>
+        // Password show/hide toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('togglePassword');
+            
+            togglePassword.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            // Add focus effects to inputs
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.parentElement.querySelector('label').style.color = 'var(--primary-dark)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (!this.value) {
+                        this.parentElement.parentElement.querySelector('label').style.color = '#355a6b';
+                    }
+                });
+            });
+            
+            // Form submission animation
+            const form = document.getElementById('registerForm');
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+                submitBtn.disabled = true;
+                
+                // In a real application, you wouldn't prevent the default here
+                // This is just for demonstration
+                // e.preventDefault();
+            });
+        });
+    </script>
+</body>
+</html>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join MedTrack</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --primary-color: #0b6b9a;
+            --primary-light: #4da6e0;
+            --primary-dark: #123e57;
+            --accent-color: #2ecc71;
+            --text-color: #123e57;
+            --light-bg: #f5f8fb;
+            --white: #ffffff;
+            --shadow: rgba(11,107,154,0.08);
+            --success-color: #2e7d32;
+            --error-color: #c62828;
+            --info-color: #1565c0;
+        }
+        
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--light-bg) 0%, #eef8ff 100%);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        /* Background Animation */
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+        
+        .floating-shape {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(77, 166, 224, 0.1);
+            animation: float 20s infinite linear;
+        }
+        
+        .floating-shape:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 5%;
+            animation-duration: 25s;
+        }
+        
+        .floating-shape:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            left: 80%;
+            animation-duration: 30s;
+            background: rgba(46, 204, 113, 0.08);
+        }
+        
+        .floating-shape:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 40%;
+            left: 85%;
+            animation-duration: 20s;
+            background: rgba(18, 62, 87, 0.05);
+        }
+        
+        .floating-shape:nth-child(4) {
+            width: 100px;
+            height: 100px;
+            top: 80%;
+            left: 10%;
+            animation-duration: 35s;
+            background: rgba(77, 166, 224, 0.1);
+        }
+        
+        @keyframes float {
+            0% {
+                transform: translate(0, 0) rotate(0deg);
+            }
+            33% {
+                transform: translate(30px, -50px) rotate(120deg);
+            }
+            66% {
+                transform: translate(-20px, 20px) rotate(240deg);
+            }
+            100% {
+                transform: translate(0, 0) rotate(360deg);
+            }
+        }
+        
+        .top-left-heading {
+            position: absolute;
+            top: 32px;
+            left: 40px;
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--primary-dark);
+            letter-spacing: 2px;
+            text-shadow: none;
+            z-index: 10;
+            animation: fadeInDown 0.8s, subtleGlow 3s ease-in-out infinite;
+        }
+        
+        @keyframes subtleGlow {
+            0% {
+                text-shadow: 0 0 12px rgba(77,166,224,0.28), 0 2px 18px rgba(34,120,170,0.12);
+                transform: scale(1);
+            }
+            50% {
+                text-shadow: 0 0 24px rgba(77,166,224,0.32), 0 2px 24px rgba(119,195,240,0.20);
+                transform: scale(1.02);
+            }
+            100% {
+                text-shadow: 0 0 12px rgba(77,166,224,0.28), 0 2px 18px rgba(34,120,170,0.12);
+                transform: scale(1);
+            }
+        }
+        
+        /* Top bar styles */
+        .top-bar {
+            position: absolute;
+            top: 28px;
+            right: 40px;
+            display: flex;
+            gap: 12px;
+            z-index: 20;
+        }
+        
+        .top-bar-btn {
+            background: linear-gradient(90deg, var(--primary-light), #77c3f0);
+            color: var(--white);
+            border: 1.5px solid rgba(77,166,224,0.9);
+            border-radius: 22px;
+            padding: 7px 18px 7px 18px;
+            font-size: 0.98rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            outline: none;
+            box-shadow: 0 4px 12px rgba(77,166,224,0.12);
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            text-decoration: none;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .top-bar-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        .top-bar-btn:hover::before {
+            left: 100%;
+        }
+        
+        .top-bar-btn:hover, .top-bar-btn:focus {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 8px 22px rgba(77,166,224,0.15);
+        }
+        
+        .center-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .register-card {
+            background: linear-gradient(135deg, var(--white) 0%, #f2fbff 100%);
+            border-radius: 18px;
+            box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            padding: 35px 30px 30px 30px;
+            width: 100%;
+            max-width: 450px;
+            color: var(--text-color);
+            animation: fadeInUp 1.1s, cardGlow 4s ease-in-out infinite;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(77,166,224,0.1);
+        }
+        
+        @keyframes cardGlow {
+            0% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            }
+            50% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.15);
+            }
+            100% {
+                box-shadow: 0 12px 40px rgba(11,107,154,0.1);
+            }
+        }
+        
+        .register-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            animation: borderFlow 3s linear infinite;
+        }
+        
+        @keyframes borderFlow {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(40px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+        
+        .register-card h2 {
+            color: var(--primary-dark);
+            text-align: center;
+            margin-bottom: 25px;
+            font-size: 1.9rem;
+            font-weight: 800;
+            letter-spacing: 0.8px;
+            position: relative;
+            padding-bottom: 10px;
+        }
+        
+        .register-card h2::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--primary-light), var(--accent-color));
+            border-radius: 2px;
+        }
+        
+        .form-group {
+            margin-bottom: 22px;
+            width: 100%;
+            animation: slideIn 0.5s ease-out forwards;
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        
+        .form-group:nth-child(1) { animation-delay: 0.1s; }
+        .form-group:nth-child(2) { animation-delay: 0.2s; }
+        .form-group:nth-child(3) { animation-delay: 0.3s; }
+        .form-group:nth-child(4) { animation-delay: 0.4s; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #355a6b;
+            transition: color 0.3s;
+        }
+        
+        .input-container {
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .input-container i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--primary-light);
+            font-size: 1.1rem;
+            opacity: 0.9;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        
+        input {
+            width: 100%;
+            padding: 14px 15px 14px 44px;
+            border: 1.5px solid #d6eaf7;
+            border-radius: 10px;
+            font-size: 16px;
+            background: var(--white);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+        
+        input:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(119,195,240,0.15);
+            outline: none;
+            background: var(--white);
+            transform: translateY(-2px);
+        }
+        
+        input:focus + i {
+            color: var(--primary-dark);
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        .toggle-password {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--primary-light);
+            cursor: pointer;
+            padding: 5px;
+            border-radius: 4px;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+        
+        .toggle-password:hover {
+            color: var(--primary-dark);
+            background: transparent;
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg, var(--primary-light), #77c3f0);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            position: relative;
+            overflow: hidden;
+            animation: pulseBtn 2s infinite;
+        }
+        
+        @keyframes pulseBtn {
+            0% { box-shadow: 0 6px 18px rgba(77,166,224,0.15); }
+            50% { box-shadow: 0 6px 18px rgba(77,166,224,0.25); }
+            100% { box-shadow: 0 6px 18px rgba(77,166,224,0.15); }
+        }
+        
+        button[type="submit"]::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+        
+        button[type="submit"]:hover::before {
+            left: 100%;
+        }
+        
+        button[type="submit"]:hover {
+            box-shadow: 0 10px 26px rgba(77,166,224,0.2);
+            transform: translateY(-3px);
+        }
+        
+        .login-link {
+            text-align: center;
+            margin-top: 25px;
+            color: #b0c4de;
+            font-size: 0.98rem;
+            animation: fadeIn 1s 0.8s both;
+        }
+        
+        .login-link a {
+            color: var(--primary-light);
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .login-link a::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-light);
+            transition: width 0.3s;
+        }
+        
+        .login-link a:hover {
+            color: var(--primary-dark);
+        }
+        
+        .login-link a:hover::after {
+            width: 100%;
+        }
+        
+        .alert {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 22px;
+            animation: slideInAlert 0.5s ease-out;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            width: 100%;
+            box-sizing: border-box;
+            border-left: 4px solid;
+        }
+        
+        @keyframes slideInAlert {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .alert-success {
+            background-color: rgba(46, 125, 50, 0.1);
+            color: var(--success-color);
+            border-left-color: var(--success-color);
+        }
+        
+        .alert-danger {
+            background-color: rgba(198, 40, 40, 0.1);
+            color: var(--error-color);
+            border-left-color: var(--error-color);
+        }
+        
+        .alert-info {
+            background-color: rgba(21, 101, 192, 0.1);
+            color: var(--info-color);
+            border-left-color: var(--info-color);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @media (max-width: 900px) {
+            .top-left-heading, .top-bar {
+                position: static;
+                margin: 20px 0 0 0;
+                left: unset;
+                right: unset;
+                top: unset;
+                display: flex;
+                justify-content: center;
+            }
+            .top-bar {
+                margin-bottom: 10px;
+            }
+        }
+        
+        @media (max-width: 600px) {
+            .top-left-heading {
+                font-size: 1.8rem;
+                margin-top: 32px;
+            }
+            .center-container {
+                padding: 20px 0;
+            }
+            .register-card {
+                padding: 25px 20px 20px 20px;
+                max-width: 95vw;
+            }
+            .top-bar-btn {
+                font-size: 0.93rem;
+                padding: 7px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation">
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+        <div class="floating-shape"></div>
+    </div>
+    
+    <div class="top-left-heading">MedTrack</div>
+    <div class="top-bar">
+        <a href="{{ url_for('home') }}" class="top-bar-btn"><i class="fas fa-home"></i> Home</a>
+        <a href="{{ url_for('logout') }}" class="top-bar-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+    </div>
+    <div class="center-container">
+        <div class="register-card">
+            <h2>Join MedTrack</h2>
+            <!-- Flash Messages -->
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, msg in messages %}
+                        <div class="alert alert-{{ category }}">
+                            <i class="fas fa-{% if category == 'success' %}check-circle{% elif category == 'danger' %}exclamation-circle{% else %}info-circle{% endif %}"></i>
+                            {{ msg }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST" id="registerForm">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <div class="input-container">
+                        <i class="fas fa-user"></i>
+                        <input type="text" id="username" name="username" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email (Gmail only)</label>
+                    <div class="input-container">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" id="email" name="email" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number</label>
+                    <div class="input-container">
+                        <i class="fas fa-phone"></i>
+                        <input type="text" id="phone" name="phone" required maxlength="10">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <div class="input-container">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" id="password" name="password" required>
+                        <button type="button" class="toggle-password" id="togglePassword">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <button type="submit">
+                    <i class="fas fa-user-plus"></i> Register
+                </button>
+            </form>
+            <p class="login-link">
+                Already have an account? <a href="{{ url_for('login') }}">Login here.</a>
+            </p>
+        </div>
+    </div>
+    <script>
+        // Password show/hide toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const passwordInput = document.getElementById('password');
+            const togglePassword = document.getElementById('togglePassword');
+            
+            togglePassword.addEventListener('click', function() {
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.remove('fa-eye');
+                    icon.classList.add('fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.remove('fa-eye-slash');
+                    icon.classList.add('fa-eye');
+                }
+            });
+            
+            // Add focus effects to inputs
+            const inputs = document.querySelectorAll('input');
+            inputs.forEach(input => {
+                input.addEventListener('focus', function() {
+                    this.parentElement.parentElement.querySelector('label').style.color = 'var(--primary-dark)';
+                });
+                
+                input.addEventListener('blur', function() {
+                    if (!this.value) {
+                        this.parentElement.parentElement.querySelector('label').style.color = '#355a6b';
+                    }
+                });
+            });
+            
+            // Form submission animation
+            const form = document.getElementById('registerForm');
+            form.addEventListener('submit', function(e) {
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registering...';
+                submitBtn.disabled = true;
+                
+                // In a real application, you wouldn't prevent the default here
+                // This is just for demonstration
+                // e.preventDefault();
+            });
+        });
+    </script>
+</body>
+</html>
+
