@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Set Reminder</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f5f8fb 0%, #eef8ff 100%);
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            color: #123e57;
+        }
+        .top-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(90deg,#ffffff,#eaf6ff);
+            box-shadow: 0 2px 10px rgba(11,107,154,0.06);
+            padding: 14px 28px;
+        }
+        .top-bar-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .top-bar-actions {
+            display: flex;
+            gap: 18px;
+        }
+        .topbar-btn {
+            background: linear-gradient(90deg,#4da6e0,#77c3f0);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 9px 20px;
+            font-size: 1.02rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 14px rgba(77,166,224,0.14);
+            cursor: pointer;
+            transition: background 0.22s, box-shadow 0.22s, transform 0.18s;
+            outline: none;
+            text-decoration: none;
+        }
+        .topbar-btn:hover {
+            background: linear-gradient(90deg,#3aa0d8,#5fbce8);
+            box-shadow: 0 8px 22px rgba(77,166,224,0.12);
+            transform: scale(1.05);
+        }
+        .container {
+            background: linear-gradient(135deg, #ffffff, #eef6ff);
+            padding: 26px;
+            border-radius: 16px;
+            box-shadow: 0 12px 28px rgba(11,107,154,0.06);
+            width: 100%;
+            max-width: 560px;
+            animation: fadeIn 0.5s ease;
+            border: 1px solid #eef6fb;
+            margin: 40px auto;
+            position: relative;
+            overflow: hidden;
+        }
+        .container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #4da6e0, #2ecc71);
+            transform-origin: left;
+        }
+        /* Single-card form layout */
+        .form-card {
+            background: transparent;
+            border: none;
+            padding: 0;
+            border-radius: 8px;
+            box-shadow: none;
+            width: 100%;
+            margin: 0;
+        }
+        .form-row { display:flex; align-items:center; gap:16px; margin-bottom:14px; }
+        .form-row .label-wrap { width:140px; flex:0 0 140px; text-align:right; padding-right:8px; }
+        .form-row .control-wrap { flex:1; }
+        .form-card .btn-back { display:inline-block; margin-top:12px; }
+        @media (max-width:700px){ .form-row { display:block; } .form-row .label-wrap{ width:auto; text-align:left; padding-right:0; margin-bottom:6px;} }
+        /* Improved form alignment for Set Reminder page */
+        .form-row { display:flex; align-items:center; gap:12px; }
+        .form-row .label-wrap { width:140px; flex: 0 0 140px; text-align:right; padding-right:8px; }
+        .form-row .control-wrap { flex:1; }
+        /* Stacked layout: label above control for a simpler single-column form */
+        .form-row { display:block; margin-bottom:14px; }
+        .form-row .label-wrap { width:auto; text-align:left; padding-right:0; margin-bottom:6px; font-weight:700; }
+        .form-row .control-wrap { width:100%; }
+        @media (max-width:700px){ .form-row { display:block; } .form-row .label-wrap{ width:auto; text-align:left; padding-right:0; margin-bottom:6px;} }
+        @keyframes fadeInCard {
+            from { opacity: 0; transform: translateY(40px) scale(0.97);}
+            to { opacity: 1; transform: translateY(0) scale(1);}
+        }
+        h2 {
+            text-align: center;
+            color: #123e57;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-size: 1.6rem;
+            animation: slideInLeft 0.6s ease-out;
+        }
+        @keyframes slideInLeft {
+            from { transform: translateX(-20px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .form-group {
+            margin-bottom: 20px;
+            animation: fadeIn 0.8s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        label {
+            font-weight: 600;
+            color: #123e57;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 15px;
+        }
+        select, input[type=time], input[type=text] {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #d6eaf7;
+            font-size: 15px;
+            background: #ffffff;
+            color: #123e57;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 6px rgba(11,107,154,0.04);
+        }
+        select:focus, input[type=time]:focus, input[type=text]:focus {
+            border-color: #77c3f0;
+            box-shadow: 0 0 0 4px rgba(119,195,240,0.12);
+            outline: none;
+            background: #fff;
+            color: #123e57;
+        }
+        .frequency-group {
+            display: flex;
+            gap: 12px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+            .frequency-group {
+                display: flex;
+                flex-direction: column; /* stack frequency options vertically */
+                gap: 8px;
+                margin-top: 8px;
+            }
+        .frequency-btn {
+            background: #ffffff;
+            color: #123e57;
+            border: 1px solid #e1eef6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.18s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 8px rgba(11,107,154,0.03);
+            width:100%; justify-content:flex-start;
+        }
+        .frequency-btn.active, .frequency-btn:focus {
+            background: linear-gradient(90deg,#4da6e0,#77c3f0);
+            color: #fff;
+            border-color: #4da6e0;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.12);
+        }
+        .frequency-btn:hover {
+            background: #eef6ff;
+            color: #0b6b9a;
+            border-color: #d6eaf7;
+        }
+        .ampm-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+            .ampm-group {
+                display: flex;
+                flex-direction: column; /* stack AM/PM vertically */
+                gap: 8px;
+                margin-top: 8px;
+            }
+        .ampm-btn {
+            background: #ffffff;
+            color: #123e57;
+            border: 1px solid #e1eef6;
+            border-radius: 8px;
+            padding: 10px 14px;
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.18s;
+            box-shadow: 0 2px 6px rgba(11,107,154,0.03);
+            display:block; width:100%; text-align:left;
+        }
+        .ampm-btn.active, .ampm-btn:focus {
+            background: linear-gradient(90deg,#4da6e0,#77c3f0);
+            color: #fff;
+            border-color: #4da6e0;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.12);
+        }
+        .ampm-btn:hover {
+            background: #eef6ff;
+            color: #0b6b9a;
+            border-color: #d6eaf7;
+        }
+        button[type="submit"] {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(90deg,#4da6e0,#77c3f0);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.22s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 14px;
+            box-shadow: 0 6px 18px rgba(77,166,224,0.12);
+        }
+        button[type="submit"]:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 10px 26px rgba(77,166,224,0.12);
+        }
+        a.btn-back {
+            background: #ffffff;
+            color: #123e57;
+            border: 1px solid #e1eef6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-align: center;
+            margin-top: 18px;
+            font-weight: 500;
+            font-size: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            transition: all 0.18s ease;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(11,107,154,0.03);
+        }
+        a.btn-back:hover {
+            background: #eef6ff;
+            color: #0b6b9a;
+            transform: translateY(-2px) scale(1.03);
+        }
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease-out;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-left: 4px solid;
+        }
+        .alert-success {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+            border-color: #4caf50;
+        }
+        .alert-danger {
+            background-color: #ffebee;
+            color: #c62828;
+            border-color: #f44336;
+        }
+        @media (max-width: 600px) {
+            .container { padding: 12px; }
+            .top-bar { padding: 12px 10px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <div class="top-bar-title">
+            <i class="fas fa-notes-medical"></i> MedTrack
+        </div>
+        <div class="top-bar-actions">
+            <a href="{{ url_for('home') }}" class="topbar-btn"><i class="fas fa-home"></i> Home</a>
+            <a href="{{ url_for('logout') }}" class="topbar-btn"><i class="fas fa-door-open"></i> Logout</a>
+        </div>
+    </div>
+    <div class="container">
+        <h2><i class="fas fa-clock"></i> Set Medicine Reminder</h2>
+        <div class="form-card">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, msg in messages %}
+              <div class="alert alert-{{ category }}">
+                <i class="fas fa-{% if category=='danger' %}exclamation-circle{% else %}check-circle{% endif %}"></i>
+                {{ msg }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <!-- Medicine Name -->
+            <div class="form-group form-row">
+                <div class="label-wrap"><label><i class="fas fa-pills"></i> Medicine</label></div>
+                <div class="control-wrap">
+                    <select name="medicine_id" required>
+                        <option value="" disabled selected>Select medicine</option>
+                        {% for med in medicines %}
+                            <option value="{{ med.id }}" data-timing="{{ med.timing }}">{{ med.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <!-- Reminder Time -->
+            <div class="form-group form-row">
+                <div class="label-wrap"><label><i class="fas fa-clock"></i> Time</label></div>
+                <div class="control-wrap">
+                    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <input type="text" name="reminder_time" id="reminder_time" placeholder="hh:mm" maxlength="5" required style="max-width:110px;">
+                        <div class="ampm-group" role="group" aria-label="AM or PM">
+                            <button type="button" class="ampm-btn active" data-ampm="AM">AM</button>
+                            <button type="button" class="ampm-btn" data-ampm="PM">PM</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Frequency -->
+            <div class="form-group form-row">
+                <div class="label-wrap"><label><i class="fas fa-calendar-alt"></i> Frequency</label></div>
+                <div class="control-wrap">
+                    <div class="frequency-group" id="frequencyGroup">
+                        <button type="button" class="frequency-btn active" data-frequency="Daily"><i class="fas fa-calendar-day"></i> Daily</button>
+                        <button type="button" class="frequency-btn" data-frequency="Weekly"><i class="fas fa-calendar-week"></i> Weekly</button>
+                        <button type="button" class="frequency-btn" data-frequency="Monthly"><i class="fas fa-calendar"></i> Monthly</button>
+                        <button type="button" class="frequency-btn" data-frequency="Once a Day"><i class="fas fa-sync-alt"></i> Once a Day</button>
+                        <button type="button" class="frequency-btn" data-frequency="EveryXHours"><i class="fas fa-clock"></i> Every X Hours</button>
+                    </div>
+                    <input type="hidden" name="frequency" id="frequencyInput" value="Daily" required>
+                    <div class="form-group" id="everyXHoursGroup" style="display:none;margin-top:8px;">
+                        <label style="display:block;margin-bottom:6px;"><i class="fas fa-hourglass-half"></i> Hours Interval</label>
+                        <input type="number" min="1" max="24" id="xHoursInput" placeholder="e.g. 4" style="max-width:120px;">
+                    </div>
+                </div>
+            </div>
+            <!-- Weekly Options -->
+                        <div class="form-group form-row" id="weeklyGroup" style="display:none;">
+                                <div class="label-wrap"><label><i class="fas fa-calendar-week"></i> Weekdays</label></div>
+                                <div class="control-wrap">
+                                        <div class="frequency-group" id="weekdayButtons">
+                                                <button type="button" class="weekday-btn" data-weekday="0">Sun</button>
+                                                <button type="button" class="weekday-btn" data-weekday="1">Mon</button>
+                                                <button type="button" class="weekday-btn" data-weekday="2">Tue</button>
+                                                <button type="button" class="weekday-btn" data-weekday="3">Wed</button>
+                                                <button type="button" class="weekday-btn" data-weekday="4">Thu</button>
+                                                <button type="button" class="weekday-btn" data-weekday="5">Fri</button>
+                                                <button type="button" class="weekday-btn" data-weekday="6">Sat</button>
+                                        </div>
+                                        <input type="hidden" name="weekdays" id="weekdaysInput">
+                                </div>
+                        </div>
+            <!-- Monthly Options -->
+                        <div class="form-group form-row" id="monthlyGroup" style="display:none;">
+                                <div class="label-wrap"><label><i class="fas fa-calendar-alt"></i> Day of month</label></div>
+                                <div class="control-wrap">
+                                        <input type="number" name="month_day" id="monthDay" min="1" max="31" placeholder="e.g. 15" style="max-width:120px;">
+                                </div>
+                        </div>
+            <button type="submit" title="Save this reminder">
+                <i class="fas fa-bell"></i> Set Reminder
+            </button>
+        </form>
+            <a href="{{ url_for('dashboard') }}" class="btn-back" title="Back to dashboard">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+    </div>
+    <script>
+        // AM/PM selector
+        document.querySelectorAll('.ampm-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.ampm-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                // Optionally, update input placeholder or value
+            });
+        });
+        // Frequency button selection
+        var freqBtns = document.querySelectorAll('.frequency-btn');
+        freqBtns.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                // Remove active from all
+                freqBtns.forEach(b => b.classList.remove('active'));
+                // Add active to clicked
+                this.classList.add('active');
+                var freq = this.getAttribute('data-frequency');
+                document.getElementById('frequencyInput').value = freq;
+                // Show/hide Every X Hours input
+                if (freq === 'EveryXHours') {
+                    document.getElementById('everyXHoursGroup').style.display = 'block';
+                } else {
+                    document.getElementById('everyXHoursGroup').style.display = 'none';
+                }
+                updateFreqDebug();
+            });
+        });
+        // Ensure frequency is set before form submit
+        document.querySelector('form').addEventListener('submit', function(e) {
+            var freqInput = document.getElementById('frequencyInput');
+            var activeBtn = document.querySelector('.frequency-btn.active');
+            if (!freqInput.value) {
+                // Set to active button's value if not set
+                if (activeBtn) {
+                    freqInput.value = activeBtn.getAttribute('data-frequency');
+                } else {
+                    freqInput.value = 'Daily';
+                }
+            }
+            // If Every X Hours, set frequency as 'Every X Hours'
+            if (freqInput.value === 'EveryXHours') {
+                var x = document.getElementById('xHoursInput').value;
+                if (!x || isNaN(x) || x < 1 || x > 24) {
+                    alert('Please enter a valid number of hours (1-24) for Every X Hours.');
+                    e.preventDefault();
+                    return false;
+                }
+                freqInput.value = 'Every ' + x + ' Hours';
+                updateFreqDebug();
+            }
+        });
+
+        // Show frequency debug value live
+        // Unified frequency button logic
+        function updateFreqUI(freq) {
+            // Show/hide extra selectors
+            document.getElementById('weeklyGroup').style.display = (freq === 'Weekly') ? 'block' : 'none';
+            document.getElementById('monthlyGroup').style.display = (freq === 'Monthly') ? 'block' : 'none';
+            document.getElementById('everyXHoursGroup').style.display = (freq === 'EveryXHours') ? 'block' : 'none';
+        }
+        var freqBtns = document.querySelectorAll('.frequency-btn');
+        freqBtns.forEach(btn => {
+            btn.onclick = function(e) {
+                // Remove active from all
+                freqBtns.forEach(b => b.classList.remove('active'));
+                // Add active to clicked
+                this.classList.add('active');
+                var freq = this.getAttribute('data-frequency');
+                document.getElementById('frequencyInput').value = freq;
+                // Update UI
+                updateFreqUI(freq);
+                // Update debug
+                var debugSpan = document.getElementById('freqDebug');
+                if (debugSpan) debugSpan.textContent = freq;
+            };
+        });
+        // Initial UI state
+        updateFreqUI(document.getElementById('frequencyInput').value);
+        var debugSpan = document.getElementById('freqDebug');
+        if (debugSpan) debugSpan.textContent = document.getElementById('frequencyInput').value;
+
+        // Button click effects
+        document.querySelectorAll('button, .btn-back').forEach(button => {
+            button.addEventListener('mousedown', function() {
+                this.style.transform = 'scale(0.98)';
+            });
+            button.addEventListener('mouseup', function() {
+                this.style.transform = '';
+            });
+            button.addEventListener('mouseleave', function() {
+                this.style.transform = '';
+            });
+        });
+        // Optional: Validate time input for hh:mm format
+        document.getElementById('reminder_time').addEventListener('input', function(e) {
+            let val = e.target.value.replace(/[^0-9:]/g, '');
+            if (val.length === 2 && !val.includes(':')) val += ':';
+            e.target.value = val.slice(0,5);
+        });
+        
+        // Validate medicine timing vs chosen reminder time
+        function parseHourMinute(s){
+            var parts = (s||'').split(':');
+            var hh = parseInt(parts[0]||'0',10)||0; var mm = parseInt(parts[1]||'0',10)||0;
+            return {h:hh, m:mm};
+        }
+        function getPeriod(hour24){
+            if(hour24 >=5 && hour24 < 11) return 'Morning';
+            if(hour24 >=11 && hour24 < 14) return 'Noon';
+            if(hour24 >=16 && hour24 < 20) return 'Evening';
+            // Night covers late evening and early morning
+            return 'Night';
+        }
+
+        function showTimingWarning(msg){
+            var el = document.getElementById('timingWarning');
+            if(!el){ el = document.createElement('div'); el.id='timingWarning'; el.style.color='#c04a37'; el.style.marginTop='8px'; el.style.fontWeight='700'; document.getElementById('reminder_time').parentNode.appendChild(el); }
+            el.textContent = msg;
+        }
+        function clearTimingWarning(){ var el = document.getElementById('timingWarning'); if(el) el.textContent = ''; }
+
+        function checkTimingMatch(){
+            var sel = document.querySelector('select[name="medicine_id"]');
+            if(!sel) return true;
+            var opt = sel.options[sel.selectedIndex];
+            if(!opt || !opt.dataset) return true;
+            var medTiming = (opt.dataset.timing||'').toLowerCase(); // could be comma-separated
+            if(!medTiming) return true;
+            var timeVal = document.getElementById('reminder_time').value;
+            var ampm = document.querySelector('.ampm-btn.active') ? document.querySelector('.ampm-btn.active').getAttribute('data-ampm') : 'AM';
+            if(!timeVal) { clearTimingWarning(); return true; }
+            var p = parseHourMinute(timeVal);
+            // convert to 24-hour using AM/PM
+            var hour24 = p.h % 12; if(ampm==='PM') hour24 += 12;
+            var period = getPeriod(hour24);
+            // medTiming may contain words like Morning,Noon
+            var medParts = medTiming.split(',').map(x=>x.trim().toLowerCase());
+            var match = medParts.some(x=> x && period.toLowerCase().includes(x) || x.includes(period.toLowerCase()));
+            if(!match){
+                showTimingWarning('Warning: selected medicine timing ('+opt.dataset.timing+') does not match the selected reminder time period ('+period+'). Please confirm.');
+                return false;
+            }
+            clearTimingWarning();
+            return true;
+        }
+
+        // run checks when medicine/select/time/ampm change
+        document.querySelector('select[name="medicine_id"]').addEventListener('change', checkTimingMatch);
+        document.getElementById('reminder_time').addEventListener('blur', checkTimingMatch);
+        document.querySelectorAll('.ampm-btn').forEach(b=>b.addEventListener('click', ()=>setTimeout(checkTimingMatch,50)));
+
+        // On submit, if mismatch, confirm with user
+        document.querySelector('form').addEventListener('submit', function(e){
+            if(!checkTimingMatch()){
+                if(!confirm('The selected reminder time does not match the medicine timing. Do you want to continue?')){
+                    e.preventDefault();
+                    return false;
+                }
+            }
+        });
+        // collect selected weekdays (for weekly)
+                document.querySelectorAll('#weekdayButtons .weekday-btn').forEach(b=>{
+                    b.addEventListener('click', ()=>{
+                        b.classList.toggle('active');
+                        const sel = Array.from(document.querySelectorAll('#weekdayButtons .weekday-btn.active'))
+                            .map(x=>x.getAttribute('data-weekday'));
+                        document.getElementById('weekdaysInput').value = sel.join(',');
+                    });
+                });
+        // Large-text feature removed (no elder-mode applied)
+    </script>
+</body>
+</html>
